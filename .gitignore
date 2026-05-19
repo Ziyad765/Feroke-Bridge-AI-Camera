@@ -1,0 +1,14 @@
+/clean_frames1
+/gooddata
+/yolo_dataset
+/yolo_dataset_v2
+/yolo_dataset_v2_split
+/yolo_final_dataset
+/yolo_gooddata
+/HPC trained model
+/hpc_test_results
+/HPC_Training_Workspace
+/testing
+/training
+
+test_video.mp4

@@ -1,0 +1,16 @@
+# Jetson Orin Nano Requirements
+# Note: PyTorch and Torchvision should be installed via JetPack or NVIDIA's pip index
+# Do NOT try to install them via standard pip install commands unless you know what you are doing.
+
+ultralytics
+opencv-python
+PySide6
+qdarkstyle
+pyqtgraph
+psutil
+fastapi
+uvicorn
+jinja2
+numpy<2.0.0
+python-multipart
+websockets

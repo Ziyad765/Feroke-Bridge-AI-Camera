@@ -1,0 +1,13 @@
+ultralytics>=8.3.24
+opencv-python
+PySide6
+qdarkstyle
+pyqtgraph
+psutil
+fastapi
+uvicorn
+jinja2
+numpy<2.0.0
+torch
+torchvision
+torchaudio
