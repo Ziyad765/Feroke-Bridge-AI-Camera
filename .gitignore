@@ -12,3 +12,4 @@
 /training
 
 test_video.mp4
+runs/detect/runs/detect/vehicle_counter_edge_nano/weights/best_saved_model/tmp_tflite_int8_calibration_images.npy

@@ -13,6 +13,7 @@ You only need to transfer the folder named **`feroke project`** to your Jetson.
 
 
 
+
 ## ⚡ 2. Power Settings (Manual Step)
 To get the full potential of your Jetson's GPU, you must set it to **Max Power Mode**. Since you are doing this manually, ensure you run these commands on the Jetson terminal first:
 
