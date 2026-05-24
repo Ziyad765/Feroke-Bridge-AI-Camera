@@ -14,11 +14,7 @@
 test_video.mp4
 runs/detect/runs/detect/vehicle_counter_edge_nano/weights/best_saved_model/tmp_tflite_int8_calibration_images.npy
 
-# Model weights (large binary files — keep on device, not in git)
-*.pt
-*.engine
-*.onnx
-*.tflite
+
 
 # Python cache
 __pycache__/
@@ -28,7 +24,3 @@ __pycache__/
 # Runtime state files (device-specific, not shared)
 feroke_state.json
 
-# PyInstaller build artifacts
-build/
-dist/
-*.spec.bak
