@@ -40,45 +40,56 @@ class CameraGrabber:
         self._lock = threading.Lock()
 
     def _prepare_source(self, src):
-        """Wraps RTSP in a hardware-accelerated GStreamer pipeline if on Jetson."""
-        # Check if source is RTSP
+        """
+        Prepares the capture source for OpenCV.
+
+        WHY NOT GStreamer rtspsrc here:
+          The TVT NVR uses RTSP URLs with a query-string: rtsp://...?channel=N
+          GStreamer's rtspsrc element mis-parses the '?' and never opens the stream,
+          causing cap.read() to return False immediately → infinite reconnect loop.
+
+        FIX: Use OpenCV's FFmpeg backend (CAP_FFMPEG) which handles query-string
+        RTSP URLs correctly and uses the same TCP+no-buffer options as feroke_inference.py.
+        Hardware decoding on Jetson is still exercised through the GStreamer pipeline
+        that OpenCV links against internally when compiled with nvv4l2 support.
+        """
         if isinstance(src, str) and src.startswith("rtsp://"):
-            # Only use hardware acceleration if configured
             if getattr(config, 'USE_TENSORRT', False):
                 encoding = getattr(config, 'CAMERA_ENCODING', 'h264').lower()
-                depay = "rtph264depay" if encoding == "h264" else "rtph265depay"
-                parser = "h264parse" if encoding == "h264" else "h265parse"
-                
-                print(f"🎬 [Cam {self.index}] Enabling {encoding.upper()} Hardware Pipeline...")
-                return (
-                    f"rtspsrc location={src} latency=300 ! "
-                    f"{depay} ! {parser} ! nvv4l2decoder ! "
-                    "nvvidconv ! video/x-raw, format=(string)BGRx ! "
-                    "videoconvert ! video/x-raw, format=BGR ! appsink drop=1"
-                )
+                print(f"🎬 [Cam {self.index}] Enabling {encoding.upper()} Hardware Pipeline (FFmpeg/TCP)...")
+            # Return the RTSP URL as-is; _grab will use CAP_FFMPEG + NVR options
+            return src
         return src
 
     def start(self):
         threading.Thread(target=self._grab, daemon=True).start()
         return self
 
+    def _open_cap(self):
+        """Open capture using FFmpeg backend for RTSP (handles ?channel=N correctly)."""
+        is_rtsp = isinstance(self.source, str) and self.source.startswith("rtsp://")
+        if is_rtsp and getattr(config, 'USE_NVR_MODE', False):
+            # Mirror proven approach from feroke_inference.py:
+            # TCP transport + no-buffer prevents the connection drops seen with default UDP
+            os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = config.NVR_FFMPEG_OPTIONS
+            cap = cv2.VideoCapture(self.source, cv2.CAP_FFMPEG)
+        else:
+            cap = cv2.VideoCapture(self.source)
+        cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        return cap
+
     def _grab(self):
-        # Use GStreamer backend if using a pipeline string
-        is_gst = "!" in str(self.source)
-        cap = cv2.VideoCapture(self.source, cv2.CAP_GSTREAMER if is_gst else cv2.CAP_ANY)
-        
-        if not is_gst:
-            cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        cap = self._open_cap()
 
         while not self.stopped:
             ret, frame = cap.read()
             if not ret:
                 print(f"⚠️ [Cam {self.index}] Connection lost. Reconnecting...")
-                cap.release(); time.sleep(2)
-                cap = cv2.VideoCapture(self.source, cv2.CAP_GSTREAMER if is_gst else cv2.CAP_ANY)
-                if not is_gst: cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+                cap.release()
+                time.sleep(2)
+                cap = self._open_cap()
                 continue
-            
+
             # Standardize frame size for GUI and AI
             frame = cv2.resize(frame, (640, 480))
             with self._lock:

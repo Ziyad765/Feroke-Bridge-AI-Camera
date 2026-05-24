@@ -37,16 +37,41 @@ mkdir -p ../Feroke-Traffic-Lite/models
 
 if [ ! -f "$MODEL_ENGINE" ]; then
     echo "🆕 Compiling HPC Model to TensorRT (.engine)..."
-    echo "⚠️  This takes ~5-10 minutes on Jetson Nano. PLEASE WAIT."
-    # We must be in the Lite directory for imports to work correctly during export if any
+    echo "⚠️  This takes ~5-10 minutes on Jetson. PLEASE WAIT."
+
+    # CUDA Allocator fix: disabling the CUDA caching allocator prevents the
+    # NVML_SUCCESS internal assert crash (CUDACachingAllocator.cpp:838) that
+    # occurs on JetPack nv24.08 during model fusion at export time.
+    export PYTORCH_NO_CUDA_MEMORY_CACHING=1
+
     cd ../Feroke-Traffic-Lite
-    python3 -c "from ultralytics import YOLO; model = YOLO('models/nano_edge.pt'); model.export(format='engine', device=0, half=True, imgsz=416)"
+
+    # First attempt: full resolution
+    python3 -c "
+from ultralytics import YOLO
+model = YOLO('models/nano_edge.pt')
+model.export(format='engine', device=0, half=True, imgsz=416)
+"
+    EXPORT_STATUS=$?  # Capture BEFORE cd changes $?
+
+    # Second attempt: reduced resolution if first fails (lower VRAM pressure)
+    if [ $EXPORT_STATUS -ne 0 ]; then
+        echo "⚠️  First export attempt failed. Retrying at imgsz=320 (reduced VRAM)..."
+        python3 -c "
+from ultralytics import YOLO
+model = YOLO('models/nano_edge.pt')
+model.export(format='engine', device=0, half=True, imgsz=320)
+"
+        EXPORT_STATUS=$?
+    fi
+
     cd ../Feroke-Traffic-Jetson
-    
-    if [ $? -eq 0 ]; then
+    unset PYTORCH_NO_CUDA_MEMORY_CACHING  # Restore normal allocator for runtime
+
+    if [ $EXPORT_STATUS -eq 0 ]; then
         echo "✅ COMPILE SUCCESS: System is now optimized for hardware."
     else
-        echo "❌ COMPILE FAILED: Continuing with PyTorch mode."
+        echo "❌ COMPILE FAILED: Continuing with PyTorch (.pt) mode."
     fi
 else
     echo "⚡ Optimized Engine Found: Skipping compilation."
