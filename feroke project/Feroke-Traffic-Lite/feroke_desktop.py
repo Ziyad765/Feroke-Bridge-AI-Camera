@@ -346,7 +346,7 @@ class InteractiveZoneCanvas(QLabel):
 class FerokeApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Feroke Vanguard - Government Analytics Command")
+        self.setWindowTitle("Feroke Signal System")
         self.resize(1300, 850)
         self.setStyleSheet(qdarkstyle.load_stylesheet(qt_api='pyside6'))
 
@@ -376,10 +376,10 @@ class FerokeApp(QMainWindow):
 
         # Ribbon
         header = QHBoxLayout()
-        title = QLabel("FEROKE VANGUARD: ENTERPRISE ANALYTICS")
+        title = QLabel("Feroke Signal System")
         title.setFont(QFont("Arial", 18, QFont.Bold))
         title.setStyleSheet("color: #3b82f6;")
-        self.status_lbl = QLabel("⚫ BOOTING")
+        self.status_lbl = QLabel("Starting up...")
         self.status_lbl.setStyleSheet("color: yellow; font-weight: bold;")
         
         header.addWidget(title)
@@ -399,10 +399,10 @@ class FerokeApp(QMainWindow):
         grid.setSpacing(5)
         # Camera labels (top-left of each feed)
         cam_labels = [
-            "SIDE A — Queue",
-            "SIDE B — Queue",
-            "BRIDGE INTERIOR — Clearance A",
-            "BRIDGE INTERIOR — Clearance B",
+            "Camera 1 — Side A (Queue)",
+            "Camera 2 — Side B (Queue)",
+            "Camera 3 — Bridge Interior (Clearance A)",
+            "Camera 4 — Bridge Interior (Clearance B)",
         ]
         label_colors = ["#3b82f6", "#f59e0b", "#10B981", "#10B981"]
 
@@ -459,10 +459,10 @@ class FerokeApp(QMainWindow):
         self.t_hardware = QLabel("CPU: 0% | RAM: 0%")
         self.t_hardware.setStyleSheet("color: #64748B; font-weight: bold;")
 
-        tele_layout.addWidget(QLabel("BRIDGE STATE:"))
+        tele_layout.addWidget(QLabel("Current Signal State:"))
         tele_layout.addWidget(self.t_state)
         tele_layout.addSpacing(15)
-        tele_layout.addWidget(QLabel("TIME ELAPSED:"))
+        tele_layout.addWidget(QLabel("Time in State:"))
         tele_layout.addWidget(self.t_time)
         tele_layout.addSpacing(15)
         tele_layout.addWidget(self.t_qa)
@@ -475,16 +475,16 @@ class FerokeApp(QMainWindow):
         
         dash_layout.addWidget(grid_container, stretch=4)
         dash_layout.addWidget(tele_panel, stretch=1)
-        self.tabs.addTab(dash_widget, "Live Operations Matrix")
+        self.tabs.addTab(dash_widget, "Live View")
 
         # --- TAB 2: Government Analytics (Graphs & Logs) ---
         anal_widget = QWidget()
         anal_layout = QVBoxLayout(anal_widget)
         
         # PyQtGraph Plot
-        self.plot_widget = pg.PlotWidget(title="Live Traffic Accumulation Density")
-        self.plot_widget.setLabel('left', 'Total Vehicles In Queue')
-        self.plot_widget.setLabel('bottom', 'Time Blocks')
+        self.plot_widget = pg.PlotWidget(title="Vehicle Count Over Time")
+        self.plot_widget.setLabel('left', 'Vehicles in Queue')
+        self.plot_widget.setLabel('bottom', 'Time')
         self.plot_widget.showGrid(x=True, y=True)
         self.plot_widget.addLegend()
         self.line_qa = self.plot_widget.plot(pen=pg.mkPen('g', width=2), name="Queue A")
@@ -495,9 +495,9 @@ class FerokeApp(QMainWindow):
         self.log_list.setStyleSheet("background-color: #0F172A; color: #10B981; font-family: Consolas;")
 
         anal_layout.addWidget(self.plot_widget, stretch=2)
-        anal_layout.addWidget(QLabel("Signal Shift Historical Record (Last 60 Phasing Events):"))
+        anal_layout.addWidget(QLabel("Signal Change Log (Last 60 events):"))
         anal_layout.addWidget(self.log_list, stretch=1)
-        self.tabs.addTab(anal_widget, "Analytics & CSV Subsystems")
+        self.tabs.addTab(anal_widget, "Analytics & Logs")
 
         # --- TAB 3: Global System Settings ---
         set_widget = QWidget()
@@ -513,50 +513,50 @@ class FerokeApp(QMainWindow):
         self.sl_min_clr = QSlider(Qt.Horizontal)
         self.sl_min_clr.setRange(2, 30); self.sl_min_clr.setValue(self.ai.ctrl.min_clearance)
         
-        self.chk_nv = QCheckBox("Enable Night-Vision AI Contrast Engine (CLAHE)")
+        self.chk_nv = QCheckBox("Enable Night Vision (CLAHE contrast boost)")
         self.chk_nv.setChecked(self.ai.night_vision_enabled)
         
-        self.chk_alarm = QCheckBox("Enable Autonomous Emergency Auto-Braking (Clearance Block Alarm)")
+        self.chk_alarm = QCheckBox("Enable Auto Alarm on Bridge Block")
         self.chk_alarm.setChecked(self.ai.ctrl.auto_alarm_enabled)
         self.chk_alarm.setStyleSheet("color: #EF4444; font-weight: bold;")
 
-        btn_save_time = QPushButton("Flash Settings to Memory")
+        btn_save_time = QPushButton("Save Settings")
         btn_save_time.setMinimumHeight(40)
         btn_save_time.setStyleSheet("background-color: #3b82f6; font-weight: bold;")
         btn_save_time.clicked.connect(self._flash_settings)
 
-        btn_csv = QPushButton("EXPORT DAILY LOGS (CSV)")
+        btn_csv = QPushButton("Export Logs to CSV")
         btn_csv.setMinimumHeight(40)
         btn_csv.setStyleSheet("background-color: #10B981; color: black; font-weight: bold;")
         btn_csv.clicked.connect(self._export_csv)
 
-        set_layout.addRow(QLabel("Minimum Green Bounds (s):"), self.sl_min)
-        set_layout.addRow(QLabel("Maximum Green Bounds (s):"), self.sl_max)
+        set_layout.addRow(QLabel("Min Green Time (s):"), self.sl_min)
+        set_layout.addRow(QLabel("Max Green Time (s):"), self.sl_max)
         set_layout.addRow(QLabel("Max Bridge Clearance / All Red (s):"), self.sl_clr)
-        set_layout.addRow(QLabel("Min Clearance Wait — Even If Bridge Empty (s):"), self.sl_min_clr)
+        set_layout.addRow(QLabel("Min Clearance (s):"), self.sl_min_clr)
         set_layout.addRow(QLabel(""), QLabel("")) # Spacer
-        set_layout.addRow(QLabel("Vision Modules:"), self.chk_nv)
-        set_layout.addRow(QLabel("Security Overrides:"), self.chk_alarm)
+        set_layout.addRow(QLabel("Night Vision:"), self.chk_nv)
+        set_layout.addRow(QLabel("Alarm:"), self.chk_alarm)
         set_layout.addRow(QLabel(""), btn_save_time)
         set_layout.addRow(QLabel(""), QLabel("")) # Spacer
-        set_layout.addRow(QLabel("Auditing:"), btn_csv)
-        self.tabs.addTab(set_widget, "System Globals")
+        set_layout.addRow(QLabel("Export:"), btn_csv)
+        self.tabs.addTab(set_widget, "Settings")
 
         # --- TAB 4: Zone Override ---
         zone_widget = QWidget()
         zl = QVBoxLayout(zone_widget)
         z_toolbar = QHBoxLayout()
         self.zone_combo = QComboBox()
-        self.zone_combo.addItems(["Side A (View 0)", "Side B (View 1)", "Interior A (View 2)", "Interior B (View 3)"])
+        self.zone_combo.addItems(["Cam 1 — Side A", "Cam 2 — Side B", "Cam 3 — Interior A", "Cam 4 — Interior B"])
         self.zone_combo.currentIndexChanged.connect(self._load_zone_points)
-        btn_record = QPushButton("Start Drawing Mode")
+        btn_record = QPushButton("Draw Zone")
         btn_record.clicked.connect(self._toggle_drawing)
-        btn_clear = QPushButton("Clear Current Points")
+        btn_clear = QPushButton("Clear")
         btn_clear.clicked.connect(self._clear_drawing)
-        btn_save_zone = QPushButton("COMMIT ZONE")
+        btn_save_zone = QPushButton("Save Zone")
         btn_save_zone.clicked.connect(self._flash_zones)
 
-        z_toolbar.addWidget(QLabel("Select Hardware Lens:"))
+        z_toolbar.addWidget(QLabel("Camera:"))
         z_toolbar.addWidget(self.zone_combo)
         z_toolbar.addStretch()
         z_toolbar.addWidget(btn_record)
@@ -570,7 +570,7 @@ class FerokeApp(QMainWindow):
 
         zl.addLayout(z_toolbar)
         zl.addWidget(self.zone_canvas, 1)
-        self.tabs.addTab(zone_widget, "Zone Plotting")
+        self.tabs.addTab(zone_widget, "Zone Setup")
         
         self.tabs.currentChanged.connect(self._tab_switch)
 
@@ -590,10 +590,10 @@ class FerokeApp(QMainWindow):
     def update_telemetry(self, p):
         # UI Status updating
         if p["state"] == "EMERGENCY":
-            self.status_lbl.setText("🚨 EMERGENCY BLOCK DETECTED 🚨")
+            self.status_lbl.setText("🚨 Bridge Blocked — Emergency")
             self.status_lbl.setStyleSheet("color: white; background-color: red; font-weight: bold;")
         else:
-            self.status_lbl.setText("🟢 ACTIVE & TRACKING")
+            self.status_lbl.setText("🟢 Running")
             self.status_lbl.setStyleSheet("color: #10B981; font-weight: bold; background-color: transparent;")
         
         self.t_state.setText(p["state"])
@@ -637,7 +637,7 @@ class FerokeApp(QMainWindow):
             self.chk_nv.isChecked(), self.chk_alarm.isChecked()
         )
         self._write_settings()
-        self.status_lbl.setText("⚙️ PARAMETERS FLASHED ⚙️")
+        self.status_lbl.setText("✅ Settings saved")
 
     def _export_csv(self):
         filename = f"Feroke_Audit_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
@@ -647,7 +647,7 @@ class FerokeApp(QMainWindow):
                 w.writerow(["Timestamp", "Internal Event Log"])
                 for item in self.ai.ctrl.history:
                     w.writerow([item['time'], item['event']])
-            QMessageBox.information(self, "Export Success", f"Secure Log {filename} successfully written to local disk.")
+            QMessageBox.information(self, "Done", f"Exported to {filename}")
         except Exception as e: pass
 
     def _tab_switch(self, idx):
@@ -657,7 +657,7 @@ class FerokeApp(QMainWindow):
 
     def _toggle_drawing(self):
         self.zone_canvas.recording = not self.zone_canvas.recording
-        if self.zone_canvas.recording: self.status_lbl.setText("✏️ DRAWING MODE ACTIVE (Click Video)")
+        if self.zone_canvas.recording: self.status_lbl.setText("✏️ Drawing mode — click the video to add points")
 
     def _clear_drawing(self):
         self.zone_canvas.points = []
@@ -676,7 +676,7 @@ class FerokeApp(QMainWindow):
         if len(self.zone_canvas.points) > 2:
             self.ai.stores[cid].zone = copy.deepcopy(self.zone_canvas.points)
             self._write_settings()
-            self.status_lbl.setText("🌐 ZONE MAP LOCKED TO FIRMWARE 🌐")
+            self.status_lbl.setText("✅ Zone saved")
             self.zone_canvas.recording = False
 
     def _write_settings(self):
